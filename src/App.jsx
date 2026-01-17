@@ -159,21 +159,20 @@ const Roadbook = ({ entries }) => {
   );
 };
 
-// --- SEITEN INHALTE ---
-const Impressum = () => (
+// --- SEITEN INHALTE (JETZT DYNAMISCH) ---
+const Impressum = ({ text }) => (
   <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-sm border-2 border-slate-200 mt-8 animate-fade-in text-slate-700">
     <h2 className="text-3xl font-bold mb-6 text-slate-800">Impressum</h2>
-    <h3 className="text-xl font-bold mb-2">Angaben gemäß § 5 TMG</h3>
-    <p className="mb-4">René [Dein Nachname]<br />[Deine Straße]<br />[Dein Ort]</p>
-    <h3 className="text-xl font-bold mb-2">Kontakt</h3>
-    <p className="mb-4">E-Mail: [Deine E-Mail]</p>
+    {/* Hier wird der Text angezeigt, der im Admin-Bereich eingegeben wurde */}
+    <div className="whitespace-pre-wrap">{text || "Bitte Impressum im Admin-Bereich ausfüllen."}</div>
   </div>
 );
 
-const Datenschutz = () => (
+const Datenschutz = ({ text }) => (
   <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-sm border-2 border-slate-200 mt-8 animate-fade-in text-slate-700">
     <h2 className="text-3xl font-bold mb-6 text-slate-800">Datenschutzerklärung</h2>
-    <p>Daten werden nur lokal im Browser gespeichert.</p>
+    {/* Hier wird der Text angezeigt, der im Admin-Bereich eingegeben wurde */}
+    <div className="whitespace-pre-wrap">{text || "Bitte Datenschutz im Admin-Bereich ausfüllen."}</div>
   </div>
 );
 
@@ -237,11 +236,17 @@ const AboutMe = () => {
   );
 };
 
-const AdminLogin = ({ onLogin, onAddRecipe, onAddGalleryImage, onAddRoadbookEntry }) => {
+const AdminLogin = ({ onLogin, onAddRecipe, onAddGalleryImage, onAddRoadbookEntry, legalTexts, onUpdateLegal }) => {
   const [pin, setPin] = useState(''); const [error, setError] = useState(false); const [activeAdminTab, setActiveAdminTab] = useState('weights');
   const [newRecipe, setNewRecipe] = useState({ title: '', tags: '', ingredients: '', steps: '', image: '' });
   const [newGallery, setNewGallery] = useState({ caption: '', date: new Date().toISOString().split('T')[0], image: '' });
   const [newEntry, setNewEntry] = useState({ title: '', date: new Date().toISOString().split('T')[0], text: '', image: '' });
+  
+  // Lokaler State für die Rechtstexte im Formular
+  const [localLegal, setLocalLegal] = useState(legalTexts);
+
+  // Wenn sich die Props ändern (initiales Laden), State updaten
+  useEffect(() => { setLocalLegal(legalTexts); }, [legalTexts]);
 
   const handleLogin = (e) => { e.preventDefault(); if (pin === '1979') { onLogin(); } else { setError(true); setPin(''); }};
   const handleImageUpload = (e, setTargetState, currentTargetState) => {
@@ -257,6 +262,8 @@ const AdminLogin = ({ onLogin, onAddRecipe, onAddGalleryImage, onAddRoadbookEntr
   const submitRecipe = (e) => { e.preventDefault(); onAddRecipe(newRecipe); setNewRecipe({ title: '', tags: '', ingredients: '', steps: '', image: '' }); alert("Rezept gespeichert!"); };
   const submitGallery = (e) => { e.preventDefault(); if(!newGallery.image) { alert("Bitte ein Bild auswählen!"); return; } onAddGalleryImage(newGallery); setNewGallery({ caption: '', date: new Date().toISOString().split('T')[0], image: '' }); alert("Bild zur Galerie hinzugefügt!"); };
   const submitRoadbook = (e) => { e.preventDefault(); onAddRoadbookEntry(newEntry); setNewEntry({ title: '', date: new Date().toISOString().split('T')[0], text: '', image: '' }); alert("Roadbook Eintrag gespeichert!"); };
+  
+  const saveLegalTexts = () => { onUpdateLegal(localLegal); alert("Rechtstexte gespeichert! ✅"); };
 
   return (
     <div className="space-y-8">
@@ -265,11 +272,47 @@ const AdminLogin = ({ onLogin, onAddRecipe, onAddGalleryImage, onAddRoadbookEntr
         <button onClick={() => setActiveAdminTab('recipes')} className={`font-bold pb-2 whitespace-nowrap ${activeAdminTab==='recipes' ? 'text-[#00cca0] border-b-2 border-[#00cca0]' : 'text-slate-400'}`}>Rezepte</button>
         <button onClick={() => setActiveAdminTab('gallery')} className={`font-bold pb-2 whitespace-nowrap ${activeAdminTab==='gallery' ? 'text-[#00cca0] border-b-2 border-[#00cca0]' : 'text-slate-400'}`}>Galerie</button>
         <button onClick={() => setActiveAdminTab('roadbook')} className={`font-bold pb-2 whitespace-nowrap ${activeAdminTab==='roadbook' ? 'text-[#00cca0] border-b-2 border-[#00cca0]' : 'text-slate-400'}`}>Roadbook</button>
+        {/* NEUER TAB */}
+        <button onClick={() => setActiveAdminTab('legal')} className={`font-bold pb-2 whitespace-nowrap ${activeAdminTab==='legal' ? 'text-[#00cca0] border-b-2 border-[#00cca0]' : 'text-slate-400'}`}>Rechtstexte</button>
       </div>
+      
       {activeAdminTab === 'weights' && ( <div className="bg-slate-50 p-8 rounded-2xl border-2 border-slate-200 text-center animate-fade-in"><p className="text-slate-500 mb-4 font-medium">Neues Gewicht?</p><p className="text-xs text-slate-400">(Nutze den Button "Gewicht eintragen" unten)</p></div>)}
+      
       {activeAdminTab === 'recipes' && ( <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 animate-fade-in"><h3 className="font-bold text-slate-800 mb-4">Neues Rezept</h3><form onSubmit={submitRecipe} className="space-y-4"><input required className="w-full border p-3 rounded-xl bg-slate-50" value={newRecipe.title} onChange={e => setNewRecipe({...newRecipe, title: e.target.value})} placeholder="Titel" /><div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Bild</label><input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setNewRecipe, newRecipe)} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm font-bold file:bg-[#00cca0] file:text-white" />{newRecipe.image && <img src={newRecipe.image} alt="Vorschau" className="mt-2 h-20 rounded-lg" />}</div><input className="w-full border p-3 rounded-xl bg-slate-50" value={newRecipe.tags} onChange={e => setNewRecipe({...newRecipe, tags: e.target.value})} placeholder="Tags (Low Carb...)" /><textarea required className="w-full border p-3 rounded-xl bg-slate-50 h-24" value={newRecipe.ingredients} onChange={e => setNewRecipe({...newRecipe, ingredients: e.target.value})} placeholder="Zutaten" /><textarea required className="w-full border p-3 rounded-xl bg-slate-50 h-24" value={newRecipe.steps} onChange={e => setNewRecipe({...newRecipe, steps: e.target.value})} placeholder="Zubereitung" /><button type="submit" className={`w-full py-3 rounded-xl font-bold ${gradientButtonClass}`}>Rezept speichern</button></form></div>)}
+      
       {activeAdminTab === 'gallery' && ( <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 animate-fade-in"><h3 className="font-bold text-slate-800 mb-4">Bild zur Galerie</h3><form onSubmit={submitGallery} className="space-y-4"><div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Bild hochladen</label><input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setNewGallery, newGallery)} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm font-bold file:bg-[#00cca0] file:text-white" />{newGallery.image && <img src={newGallery.image} alt="Vorschau" className="mt-2 h-32 object-cover rounded-lg border" />}</div><input type="date" required className="w-full border p-3 rounded-xl bg-slate-50" value={newGallery.date} onChange={e => setNewGallery({...newGallery, date: e.target.value})} /><input required className="w-full border p-3 rounded-xl bg-slate-50" value={newGallery.caption} onChange={e => setNewGallery({...newGallery, caption: e.target.value})} placeholder="Beschreibung" /><button type="submit" className={`w-full py-3 rounded-xl font-bold ${gradientButtonClass}`}>Bild speichern</button></form></div>)}
+      
       {activeAdminTab === 'roadbook' && ( <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 animate-fade-in"><h3 className="font-bold text-slate-800 mb-4">Neuer Roadbook Eintrag</h3><form onSubmit={submitRoadbook} className="space-y-4"><input required className="w-full border p-3 rounded-xl bg-slate-50 font-bold" value={newEntry.title} onChange={e => setNewEntry({...newEntry, title: e.target.value})} placeholder="Titel" /><input type="date" required className="w-full border p-3 rounded-xl bg-slate-50" value={newEntry.date} onChange={e => setNewEntry({...newEntry, date: e.target.value})} /><div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Bild (Optional)</label><input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setNewEntry, newEntry)} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm font-bold file:bg-[#00cca0] file:text-white" />{newEntry.image && <img src={newEntry.image} alt="Vorschau" className="mt-2 h-32 object-cover rounded-lg border" />}</div><textarea required className="w-full border p-3 rounded-xl bg-slate-50 h-40" value={newEntry.text} onChange={e => setNewEntry({...newEntry, text: e.target.value})} placeholder="Deine Gedanken..." /><button type="submit" className={`w-full py-3 rounded-xl font-bold ${gradientButtonClass}`}>Eintrag speichern</button></form></div>)}
+      
+      {/* NEUER TAB INHALT: RECHTSTEXTE */}
+      {activeAdminTab === 'legal' && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 animate-fade-in">
+          <h3 className="font-bold text-slate-800 mb-4">Rechtstexte bearbeiten</h3>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Impressum Text</label>
+              <textarea 
+                className="w-full border-2 border-slate-200 p-4 rounded-xl bg-slate-50 h-48 focus:border-[#00cca0] outline-none transition-colors" 
+                value={localLegal.impressum} 
+                onChange={e => setLocalLegal({...localLegal, impressum: e.target.value})} 
+                placeholder="Hier Impressum reinkopieren..." 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Datenschutz Text</label>
+              <textarea 
+                className="w-full border-2 border-slate-200 p-4 rounded-xl bg-slate-50 h-48 focus:border-[#00cca0] outline-none transition-colors" 
+                value={localLegal.datenschutz} 
+                onChange={e => setLocalLegal({...localLegal, datenschutz: e.target.value})} 
+                placeholder="Hier Datenschutzerklärung reinkopieren..." 
+              />
+            </div>
+            <button onClick={saveLegalTexts} className={`w-full py-3 rounded-xl font-bold ${gradientButtonClass}`}>
+              Texte speichern
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -288,11 +331,25 @@ export default function App() {
   // ROADBOOK
   const [roadbookEntries, setRoadbookEntries] = useState(() => { try { const s = localStorage.getItem('rene_roadbook_v4'); if(s) return JSON.parse(s); } catch(e){} return [{ id: 1, date: '18.01.2026', title: 'Der Start meiner Road to 85: Von allem zu viel (vor allem vom Gewicht)', text: `Ich schiebe den Start schon eine ganze Zeit vor mir her, nach dem Motto "Heute ist nicht der richtige Tag um zu starten". Aber wann ist der richtige Tag/Zeitpunkt? Er ist genau JETZT!\n\nIch habe Respekt vor meinem Weg, weil es nicht der erste Versuch ist, mein Wunschgewicht von 85 kg auf gesundem Weg zu erreichen. Aber ich bin fest entschlossen, dass es das letzte Mal ist, dass ich es versuchen muss, weil ich endlich das Ziel erreichen werde: Gesund und nachhaltig abzunehmen.\n\nKörperlich bin ich so ziemlich in der schlechtesten Verfassung, seit ich mich erinnern kann. Der Weg von der Wohnung in den Keller lässt mich in Schweiß ausbrechen. An Joggen ist gar nicht zu denken, weil ich nach 50 Metern ein Sauerstoffzelt benötige. Auch mental bin ich nicht auf der Höhe (Schaffe ich die 12 Wochen Balance-Burn Journey bei Freeletics, macht mein Körper überhaupt mit, kann ich der Versuchung von Schokolade widerstehen).\n\nDer Respekt ist riesig, aber nicht so riesig wie mein Wille und meine Motivation! Ich freue mich, dass es los geht und ihr mich auf meinem Weg begleiten möchtet.\n\nBis die Tage, euer René`, image: '' }]; });
 
+  // NEU: RECHTSTEXTE STATE
+  const [legalTexts, setLegalTexts] = useState(() => { 
+    try { 
+      const s = localStorage.getItem('rene_legal_v4'); 
+      if(s) return JSON.parse(s); 
+    } catch(e){} 
+    return { 
+      impressum: "René [Dein Nachname]\n[Deine Straße]\n[Dein Ort]\n\nKontakt:\nE-Mail: [Deine E-Mail]", 
+      datenschutz: "Daten werden nur lokal im Browser gespeichert." 
+    }; 
+  });
+
   // SPEICHERN
   useEffect(() => { localStorage.setItem('rene_weights_v4', JSON.stringify(weights)); }, [weights]);
   useEffect(() => { try { localStorage.setItem('rene_recipes_v4', JSON.stringify(recipes)); } catch (e) {} }, [recipes]);
   useEffect(() => { try { localStorage.setItem('rene_gallery_v4', JSON.stringify(galleryImages)); } catch (e) {} }, [galleryImages]);
   useEffect(() => { try { localStorage.setItem('rene_roadbook_v4', JSON.stringify(roadbookEntries)); } catch (e) { alert("Speicher voll!"); } }, [roadbookEntries]);
+  // NEU: RECHTSTEXTE SPEICHERN
+  useEffect(() => { try { localStorage.setItem('rene_legal_v4', JSON.stringify(legalTexts)); } catch (e) {} }, [legalTexts]);
 
   const currentWeight = weights.length > 0 ? weights[weights.length - 1].weight : 107.0;
   const handleAddWeight = (val) => { setWeights([...weights, { date: new Date().toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit'}), weight: parseFloat(val) }]); setIsModalOpen(false); };
@@ -300,6 +357,10 @@ export default function App() {
   const handleAddGalleryImage = (newImgData) => { setGalleryImages([{ id: Date.now(), date: new Date(newImgData.date).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'}), caption: newImgData.caption, image: newImgData.image }, ...galleryImages]); };
   const handleAddRoadbookEntry = (newEntryData) => { setRoadbookEntries([{ id: Date.now(), date: new Date(newEntryData.date).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'}), title: newEntryData.title, text: newEntryData.text, image: newEntryData.image }, ...roadbookEntries]); };
   const handleDelete = (idx) => { if (weights.length <= 1) return; if (confirm("Löschen?")) setWeights(weights.filter((_, i) => i !== idx)); };
+  
+  // Funktion zum Updaten der Rechtstexte
+  const handleUpdateLegal = (newTexts) => { setLegalTexts(newTexts); };
+
   const navigateTo = (tab) => { setActiveTab(tab); setIsMobileMenuOpen(false); };
   
   const AdminLoginView = () => {
@@ -361,10 +422,22 @@ export default function App() {
         {activeTab === 'recipes' && <div className="py-10 px-4"><Recipes recipes={recipes} /></div>}
         {activeTab === 'gallery' && <div className="py-10 px-4"><Gallery images={galleryImages} /></div>}
         {activeTab === 'roadbook' && <Roadbook entries={roadbookEntries} />}
-        {activeTab === 'admin' && ( <div className="max-w-4xl mx-auto px-4 py-10 animate-fade-in"> {!isAdminAuthenticated ? <AdminLoginView /> : ( <div className="space-y-8"><div className="flex justify-between items-center border-b pb-6"><h2 className="text-2xl font-bold">Admin</h2><button onClick={() => setIsAdminAuthenticated(false)} className="text-red-400 font-bold uppercase text-sm">Abmelden</button></div><BMIBox currentWeight={currentWeight} /><AdminLogin onLogin={() => {}} onAddRecipe={handleAddRecipe} onAddGalleryImage={handleAddGalleryImage} onAddRoadbookEntry={handleAddRoadbookEntry} /><div className="bg-slate-50 p-8 rounded-2xl border-2 border-slate-200 text-center mt-8"><h3 className="font-bold mb-4">Gewicht verwalten</h3><button onClick={() => setIsModalOpen(true)} className={`px-8 py-4 rounded-full font-bold text-lg ${gradientButtonClass}`}>+ Gewicht eintragen</button><div className="mt-8 text-left bg-white p-4 rounded-xl border-2 border-slate-100"><HistoryList weights={weights} onDelete={handleDelete} /></div></div></div> )} </div> )}
+        {activeTab === 'admin' && ( <div className="max-w-4xl mx-auto px-4 py-10 animate-fade-in"> {!isAdminAuthenticated ? <AdminLoginView /> : ( <div className="space-y-8"><div className="flex justify-between items-center border-b pb-6"><h2 className="text-2xl font-bold">Admin</h2><button onClick={() => setIsAdminAuthenticated(false)} className="text-red-400 font-bold uppercase text-sm">Abmelden</button></div><BMIBox currentWeight={currentWeight} />
+        {/* HIER WIRD JETZT DER ADMIN LOGIN MIT PROPS AUFGERUFEN */}
+        <AdminLogin 
+          onLogin={() => {}} 
+          onAddRecipe={handleAddRecipe} 
+          onAddGalleryImage={handleAddGalleryImage} 
+          onAddRoadbookEntry={handleAddRoadbookEntry} 
+          legalTexts={legalTexts} 
+          onUpdateLegal={handleUpdateLegal}
+        />
+        <div className="bg-slate-50 p-8 rounded-2xl border-2 border-slate-200 text-center mt-8"><h3 className="font-bold mb-4">Gewicht verwalten</h3><button onClick={() => setIsModalOpen(true)} className={`px-8 py-4 rounded-full font-bold text-lg ${gradientButtonClass}`}>+ Gewicht eintragen</button><div className="mt-8 text-left bg-white p-4 rounded-xl border-2 border-slate-100"><HistoryList weights={weights} onDelete={handleDelete} /></div></div></div> )} </div> )}
         {activeTab === 'about' && <div className="py-10 px-4"><AboutMe /></div>}
-        {activeTab === 'impressum' && <div className="py-10 px-4"><Impressum /></div>}
-        {activeTab === 'datenschutz' && <div className="py-10 px-4"><Datenschutz /></div>}
+        
+        {/* HIER WERDEN DIE TEXTE AN DIE SEITEN ÜBERGEBEN */}
+        {activeTab === 'impressum' && <div className="py-10 px-4"><Impressum text={legalTexts.impressum} /></div>}
+        {activeTab === 'datenschutz' && <div className="py-10 px-4"><Datenschutz text={legalTexts.datenschutz} /></div>}
       </div>
 
       <footer className="bg-slate-900 text-slate-400 py-8 text-center border-t border-slate-800 mt-auto">
